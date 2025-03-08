@@ -1,0 +1,61 @@
+<div class="form-container">
+  <h2>{{isEditMode ? 'Edit' : 'Add'}} Product</h2>
+  
+  <form [formGroup]="productForm" (ngSubmit)="onSubmit()">
+    <div class="form-group">
+      <label for="name">Product Name:</label>
+      <input 
+        type="text" 
+        id="name" 
+        formControlName="name"
+        placeholder="Enter product name">
+      <div class="error" *ngIf="productForm.get('name')?.invalid && productForm.get('name')?.touched">
+        Product name is required
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="description">Description:</label>
+      <textarea 
+        id="description" 
+        formControlName="description"
+        placeholder="Enter product description (optional)"
+        rows="3">
+      </textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="price">Price:</label>
+      <input 
+        type="number" 
+        id="price" 
+        formControlName="price"
+        min="0"
+        step="0.01"
+        placeholder="Enter price">
+      <div class="error" *ngIf="productForm.get('price')?.invalid && productForm.get('price')?.touched">
+        <span *ngIf="productForm.get('price')?.errors?.['required']">Price is required</span>
+        <span *ngIf="productForm.get('price')?.errors?.['min']">Price must be 0 or greater</span>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="category">Category:</label>
+      <input 
+        type="text" 
+        id="category" 
+        formControlName="category"
+        placeholder="Enter product category">
+      <div class="error" *ngIf="productForm.get('category')?.invalid && productForm.get('category')?.touched">
+        Category is required
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" [disabled]="productForm.invalid">
+        {{isEditMode ? 'Update' : 'Save'}} Product
+      </button>
+      <button type="button" routerLink="/products">Cancel</button>
+    </div>
+  </form>
+</div>
