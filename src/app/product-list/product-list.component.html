@@ -1,0 +1,36 @@
+<div class="product-container">
+  <h2>Products List</h2>
+
+  <!-- Loading Message -->
+  <div class="loading-message" *ngIf="loading">
+    Loading products...
+  </div>
+
+  <!-- Error Message -->
+  <div class="error-message" *ngIf="error">
+    {{ error }}
+    <button class="retry-btn" (click)="loadProducts()">Try Again</button>
+  </div>
+
+  <!-- Products Grid -->
+  <div class="products-grid" *ngIf="!loading && !error && products.length > 0">
+    <div class="product-card" *ngFor="let product of products">
+      <div class="product-id">ID: {{product.id}}</div>
+      <h3>{{product.name}}</h3>
+      <div class="product-details">
+        <p>Price: ${{product.price}}</p>
+        <p>Category: {{product.category}}</p>
+        <p class="description" *ngIf="product.description">Description: {{product.description}}</p>
+      </div>
+      <div class="product-actions">
+        <button class="edit-btn" [routerLink]="['/edit-product', product.id]">Edit</button>
+        <button class="delete-btn" (click)="deleteProduct(product.id)">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- No Products Message -->
+  <div class="no-products" *ngIf="!loading && !error && products.length === 0">
+    <p>No products found. Add some products or import from CSV.</p>
+  </div>
+</div>
