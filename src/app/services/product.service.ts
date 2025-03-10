@@ -7,29 +7,17 @@ import { Product } from '../models/product.model';
   providedIn: 'root'
 })
 export class ProductService {
-  private apiUrl = 'http://localhost:8080/products';
+  private baseUrl = 'http://localhost:8080/products';
 
   constructor(private http: HttpClient) {}
 
-  getAllProducts(): Observable<Product[]> {
-    console.log('Fetching products...');
-    return this.http.get<Product[]>(this.apiUrl)
-      .pipe(
-        catchError(error => {
-          console.error('Error fetching products:', error);
-          throw error;
-        })
-      );
+  getProducts(): Observable<Product[]> {
+    console.log('Fetching products from:', this.baseUrl);
+    return this.http.get<Product[]>(this.baseUrl);
   }
 
   getProduct(id: number): Observable<Product> {
-    return this.http.get<Product>(`${this.apiUrl}/${id}`)
-      .pipe(
-        catchError(error => {
-          console.error(`Error fetching product ${id}:`, error);
-          throw error;
-        })
-      );
+    return this.http.get<Product>(`${this.baseUrl}/${id}`);
   }
 
   createProduct(product: Product): Observable<Product> {
@@ -44,7 +32,7 @@ export class ProductService {
     console.log('Sending formatted product data:', formattedProduct);
 
     return this.http.post<Product>(
-      this.apiUrl,
+      this.baseUrl,
       formattedProduct,
       {
         headers: {
@@ -61,32 +49,14 @@ export class ProductService {
   }
 
   updateProduct(id: number, product: Product): Observable<Product> {
-    return this.http.put<Product>(`${this.apiUrl}/${id}`, product)
-      .pipe(
-        catchError(error => {
-          console.error(`Error updating product ${id}:`, error);
-          throw error;
-        })
-      );
+    return this.http.put<Product>(`${this.baseUrl}/${id}`, product);
   }
 
   deleteProduct(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`)
-      .pipe(
-        catchError(error => {
-          console.error(`Error deleting product ${id}:`, error);
-          throw error;
-        })
-      );
+    return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }
 
-  importCsv(): Observable<string> {
-    return this.http.get<string>(`${this.apiUrl}/import`, { responseType: 'text' as 'json' })
-      .pipe(
-        catchError(error => {
-          console.error('Error importing CSV:', error);
-          throw error;
-        })
-      );
+  importCsv(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/import`, { responseType: 'text' as 'json' });
   }
 }
