@@ -10,11 +10,20 @@ import { ActivatedRoute } from '@angular/router';
   standalone: false
 })
 export class ProductListComponent implements OnInit {
+  // Data properties
   products: Product[] = [];
   loading = false;
   error: string | null = null;
+
+  // Search properties
   searchId: number | null = null;
   isSearchActive = false;
+
+  // Pagination properties
+  currentPage = 1;
+  itemsPerPage = 10;
+  totalItems = 0;
+  pages: number[] = [];
 
   constructor(
     private productService: ProductService,
@@ -22,86 +31,77 @@ export class ProductListComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // Subscribe to query params to handle search by ID
+    // Check if there's a search ID in the URL
     this.route.queryParams.subscribe(params => {
-      const searchId = params['id'];
-      if (searchId) {
-        this.searchById(Number(searchId));
+      if (params['id']) {
+        this.searchById(Number(params['id']));
       } else {
         this.loadProducts();
       }
     });
   }
 
+  // Load all products with pagination
   loadProducts(): void {
     this.loading = true;
-    this.error = null;
-    this.isSearchActive = false;
-    this.productService.getAllProducts().subscribe({
-      next: (data) => {
-        console.log('Products loaded:', data);
-        this.products = data;
-        this.loading = false;
-      },
-      error: (error) => {
-        console.error('Error loading products:', error);
-        this.error = 'Failed to load products. Please try again.';
-        this.loading = false;
-      }
+    this.productService.getProducts().subscribe(data => {
+      this.totalItems = data.length;
+      const start = (this.currentPage - 1) * this.itemsPerPage;
+      const end = start + this.itemsPerPage;
+      this.products = data.slice(start, end);
+      this.updatePagination();
+      this.loading = false;
+      this.isSearchActive = false;
     });
   }
 
+  // Update pagination numbers
+  updatePagination(): void {
+    const totalPages = Math.ceil(this.totalItems / this.itemsPerPage);
+    this.pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+
+  // Handle page changes
+  changePage(page: number): void {
+    if (page >= 1 && page <= Math.ceil(this.totalItems / this.itemsPerPage)) {
+      this.currentPage = page;
+      this.loadProducts();
+    }
+  }
+
+  // Search product by ID
   searchById(id: number): void {
     this.loading = true;
-    this.error = null;
-    this.productService.getProduct(id).subscribe({
-      next: (product) => {
-        console.log('Product found:', product);
-        this.products = [product];
-        this.loading = false;
-        this.isSearchActive = true;
-      },
-      error: (error) => {
-        console.error('Error finding product:', error);
-        this.error = 'Product not found with ID: ' + id;
-        this.loading = false;
-      }
+    this.productService.getProduct(id).subscribe(product => {
+      this.products = product ? [product] : [];
+      this.totalItems = this.products.length;
+      this.currentPage = 1;
+      this.updatePagination();
+      this.loading = false;
+      this.isSearchActive = true;
     });
   }
 
+  // Clear search and show all products
   clearSearch(): void {
     this.searchId = null;
     this.loadProducts();
   }
 
+  // Delete a product
   deleteProduct(id: number | undefined): void {
-    if (id) {
-      if (confirm('Are you sure you want to delete this product?')) {
-        this.productService.deleteProduct(id).subscribe({
-          next: () => {
-            console.log('Product deleted successfully');
-            this.loadProducts();
-          },
-          error: (error) => {
-            console.error('Error deleting product:', error);
-            alert('Failed to delete product. Please try again.');
-          }
-        });
-      }
+    if (id && confirm('Are you sure you want to delete this product?')) {
+      this.productService.deleteProduct(id).subscribe(() => {
+        this.loadProducts();
+      });
     }
   }
 
+  // Import products from CSV
   importProducts(): void {
-    this.productService.importCsv().subscribe({
-      next: (response) => {
-        console.log('Import successful:', response);
-        alert('Products imported successfully!');
-        this.loadProducts();
-      },
-      error: (error) => {
-        console.error('Import failed:', error);
-        alert('Failed to import products. Please try again.');
-      }
+    this.productService.importCsv().subscribe(() => {
+      alert('Products imported successfully!');
+      this.loadProducts();
     });
   }
 }

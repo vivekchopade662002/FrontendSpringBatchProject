@@ -1,6 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { ProductService } from '../services/product.service';
 import { Product } from '../models/product.model';
 
@@ -11,74 +10,81 @@ import { Product } from '../models/product.model';
   standalone: false
 })
 export class ProductFormComponent implements OnInit {
-  productForm: FormGroup;
+  // Form data
+  product: Product = {
+    name: '',
+    description: '',
+    price: 0,
+    category: ''
+  };
+
+  // Component state
   isEditMode = false;
-  productId?: number;
+  loading = false;
+  title = 'Add New Product';
 
   constructor(
-    private fb: FormBuilder,
     private productService: ProductService,
     private router: Router,
     private route: ActivatedRoute
-  ) {
-    this.productForm = this.fb.group({
-      name: ['', Validators.required],
-      description: [''],
-      price: ['', [Validators.required, Validators.min(0)]],
-      category: ['', Validators.required]
-    });
-  }
+  ) {}
 
   ngOnInit(): void {
-    this.productId = Number(this.route.snapshot.paramMap.get('id'));
-    if (this.productId) {
+    // Check if we're editing an existing product
+    const productId = this.route.snapshot.params['id'];
+    if (productId) {
       this.isEditMode = true;
-      this.loadProduct(this.productId);
+      this.title = 'Edit Product';
+      this.loadProduct(productId);
     }
   }
 
+  // Load product data for editing
   loadProduct(id: number): void {
-    this.productService.getProduct(id).subscribe({
-      next: (product) => {
-        console.log('Loading product for edit:', product);
-        this.productForm.patchValue(product);
-      },
-      error: (error) => {
-        console.error('Error loading product:', error);
-        alert('Failed to load product. Returning to list.');
-        this.router.navigate(['/products']);
-      }
+    this.loading = true;
+    this.productService.getProduct(id).subscribe(product => {
+      this.product = product;
+      this.loading = false;
     });
   }
 
+  // Handle form submission
   onSubmit(): void {
-    if (this.productForm.valid) {
-      const product: Product = this.productForm.value;
-      console.log('Submitting product:', product);
-      
-      if (this.isEditMode && this.productId) {
-        this.productService.updateProduct(this.productId, product).subscribe({
-          next: () => {
-            console.log('Product updated successfully');
-            this.router.navigate(['/products']);
-          },
-          error: (error) => {
-            console.error('Error updating product:', error);
-            alert('Failed to update product. Please try again.');
-          }
+    this.loading = true;
+
+    if (this.isEditMode) {
+      // Update existing product
+      this.productService.updateProduct(this.product.id!, this.product)
+        .subscribe(() => {
+          this.router.navigate(['/products']);
         });
+    } else {
+      // Create new product
+      this.productService.createProduct(this.product)
+        .subscribe(() => {
+          this.router.navigate(['/products']);
+        });
+    }
+  }
+
+  // Reset form to initial state
+  resetForm(): void {
+    if (confirm('Are you sure you want to reset the form?')) {
+      if (this.isEditMode) {
+        this.loadProduct(this.product.id!);
       } else {
-        this.productService.createProduct(product).subscribe({
-          next: () => {
-            console.log('Product created successfully');
-            this.router.navigate(['/products']);
-          },
-          error: (error) => {
-            console.error('Error creating product:', error);
-            alert('Failed to create product. Please try again.');
-          }
-        });
+        this.product = {
+          name: '',
+          description: '',
+          price: 0,
+          category: ''
+        };
       }
     }
+  }
+
+  // Cancel and return to product list
+  cancel(): void {
+    this.router.navigate(['/products']);
   }
 }
